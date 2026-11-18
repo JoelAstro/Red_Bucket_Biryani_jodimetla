@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 80" fill="none">
+  <!-- Bucket Icon on the left -->
+  <g transform="translate(6, 6)">
+    <!-- Glow back circle -->
+    <circle cx="34" cy="34" r="32" fill="#F20B12"/>
+    <circle cx="34" cy="34" r="30" stroke="#FFD21C" stroke-width="1.5" stroke-dasharray="3 1.5" opacity="0.8"/>
+    
+    <!-- Steam plumes -->
+    <path d="M28 17 C27 13, 29 11, 28 8" stroke="#FFF0DA" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.85"/>
+    <path d="M34 16 C33 12, 35 10, 34 7" stroke="#FFF0DA" stroke-width="2.2" stroke-linecap="round" fill="none" opacity="0.95"/>
+    <path d="M40 17 C39 13, 41 11, 40 8" stroke="#FFF0DA" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.85"/>
+    
+    <!-- Saffron Biryani Mound & Aroma -->
+    <ellipse cx="34" cy="22.5" rx="15" ry="4.5" fill="#FFD21C"/>
+    <ellipse cx="34" cy="22.5" rx="13" ry="3.5" fill="#E6A110"/>
+    <circle cx="29" cy="22" r="1.2" fill="#FFF0DA"/>
+    <circle cx="35" cy="21.5" r="1.4" fill="#720015"/>
+    <circle cx="39" cy="22.5" r="1" fill="#15803D"/>
+    
+    <!-- Bucket Body -->
+    <path d="M17 23 L21.5 53 C21.8 55.5 24 57 27 57 L41 57 C44 57 46.2 55.5 46.5 53 L51 23 Z" fill="#C90016" stroke="#720015" stroke-width="1.2"/>
+    
+    <!-- Golden Rim -->
+    <path d="M16 23 C16 20, 52 20, 52 23 C52 26, 16 26, 16 23 Z" fill="#FFD21C" stroke="#B8860B" stroke-width="1"/>
+    <ellipse cx="34" cy="23" rx="16.5" ry="2.5" fill="#FFE57F"/>
+    
+    <!-- White Emblem Shield -->
+    <rect x="23.5" y="29.5" width="21" height="17" rx="3" fill="#FFFFFF"/>
+    <rect x="24.5" y="30.5" width="19" height="15" rx="2" stroke="#F20B12" stroke-width="0.9" fill="none"/>
+    <text x="34" y="40.5" font-family="'Impact', 'Arial Black', sans-serif" font-weight="900" font-size="8.5" fill="#C90016" text-anchor="middle" letter-spacing="0.5">RBB</text>
+    <text x="34" y="44" font-family="'Arial', sans-serif" font-weight="bold" font-size="2.9" fill="#720015" text-anchor="middle" letter-spacing="0.5">BIRYANI</text>
+  </g>
+  
+  <!-- Brand Typography -->
+  <g transform="translate(82, 10)">
+    <!-- "RED BUCKET" -->
+    <text x="0" y="27" font-family="'Montserrat', 'Impact', 'Segoe UI', sans-serif" font-weight="900" font-size="24" fill="#FFFFFF" letter-spacing="1">
+      RED <tspan fill="#FFD21C">BUCKET</tspan>
+    </text>
+    
+    <!-- "BIRYANI" -->
+    <text x="0" y="48" font-family="'Montserrat', 'Arial Black', sans-serif" font-weight="900" font-size="19" fill="#FFF0DA" letter-spacing="4">
+      BIRYANI
+    </text>
+    
+    <!-- Branch Badge: "JODIMETLA BRANCH" -->
+    <rect x="0" y="54" width="138" height="16" rx="8" fill="#F20B12" />
+    <circle cx="8" cy="62" r="3" fill="#FFD21C"/>
+    <text x="16" y="64.5" font-family="'Segoe UI', 'Arial', sans-serif" font-weight="800" font-size="8.5" fill="#FFFFFF" letter-spacing="1">
+      JODIMETLA BRANCH
+    </text>
+  </g>
+</svg>
