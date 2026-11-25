@@ -99,17 +99,17 @@ export function App() {
   }, []);
 
   const handleOpenAdmin = () => {
-    window.location.hash = '#admin';
+    window.history.pushState(null, '', '/admin');
     setIsAdminView(true);
     window.scrollTo({ top: 0, behavior: 'instant' });
   };
 
   const handleBackToSite = () => {
-    if (window.location.hash.startsWith('#admin')) {
-      window.location.hash = '';
-    }
     if (window.location.pathname.startsWith('/admin')) {
       window.history.pushState(null, '', '/');
+    }
+    if (window.location.hash.startsWith('#admin')) {
+      window.location.hash = '';
     }
     setIsAdminView(false);
     window.scrollTo({ top: 0, behavior: 'instant' });

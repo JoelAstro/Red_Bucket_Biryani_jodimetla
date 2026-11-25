@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { ensureDatabaseLoaded } from './db.js';
 import { authRouter } from './routes/authRoutes.js';
 import { menuRouter } from './routes/menuRoutes.js';
 import { contactRouter } from './routes/contactRoutes.js';
@@ -17,11 +18,43 @@ export const apiApp = express();
 
 // Standard middlewares
 apiApp.use(cors({ origin: true, credentials: true }));
+
+// Normalize URL for Netlify Functions (e.g. /.netlify/functions/api/... -> /api/...)
+apiApp.use((req, res, next) => {
+  if (req.url.startsWith('/.netlify/functions/api')) {
+    const stripped = req.url.slice('/.netlify/functions/api'.length) || '/';
+    if (stripped.startsWith('/uploads')) {
+      req.url = stripped;
+    } else {
+      req.url = stripped.startsWith('/api') ? stripped : `/api${stripped}`;
+    }
+  }
+  next();
+});
+
+// Ensure database is connected / loaded from persistent store on every request
+apiApp.use(async (req, res, next) => {
+  try {
+    await ensureDatabaseLoaded();
+    next();
+  } catch (err) {
+    console.error('[API] Database initialization error:', err);
+    res.status(500).json({ error: 'Database service initialization error' });
+  }
+});
+
 apiApp.use(express.json());
 apiApp.use(express.urlencoded({ extended: true }));
 
-// Serve static uploads
+// Serve local static uploads if present
 apiApp.use('/uploads', express.static(UPLOAD_DIR));
+apiApp.use('/api/uploads', express.static(UPLOAD_DIR));
+
+// Fallback image streaming for images stored in cloud/Netlify Blobs
+apiApp.get(['/uploads/:filename', '/api/uploads/:filename'], (req, res, next) => {
+  req.url = `/blob/${req.params.filename}`;
+  imageRouter(req, res, next);
+});
 
 // Mount API subrouters
 apiApp.use('/api/auth', authRouter);

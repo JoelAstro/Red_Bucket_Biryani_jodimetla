@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { hashPassword } from './auth.js';
+import { hashPassword, createSignedToken, verifySignedToken } from './auth.js';
 import { MENU_ITEMS, BUCKET_EXPERIENCES } from '../src/data/menuData.ts';
 import { RESTAURANT_INFO } from '../src/data/restaurantInfo.ts';
 
@@ -12,29 +12,31 @@ const DB_FILE = path.resolve(__dirname, '../data/restaurant_db.json');
 // In-memory database cache
 let db = null;
 const activeSessions = new Map();
+let netlifyStore = null;
 
 /**
- * Initialize database with existing project data if file doesn't exist
+ * Connect to Netlify Blobs for persistent cloud storage if in Netlify environment
  */
-function initDatabase() {
-  if (fs.existsSync(DB_FILE)) {
-    try {
-      const raw = fs.readFileSync(DB_FILE, 'utf-8');
-      db = JSON.parse(raw);
-      // Ensure required collections exist
-      if (!db.users) db.users = [];
-      if (!db.menuItems) db.menuItems = [];
-      if (!db.categories) db.categories = [];
-      if (!db.contact) db.contact = {};
-      if (!db.activity) db.activity = [];
-      return;
-    } catch (err) {
-      console.error('Error reading database file, re-initializing:', err);
+async function getNetlifyStore() {
+  if (netlifyStore) return netlifyStore;
+  try {
+    const { getStore } = await import('@netlify/blobs');
+    const storeOptions = { name: 'restaurant-data' };
+    if (process.env.NETLIFY_SITE_ID && process.env.NETLIFY_ACCESS_TOKEN) {
+      storeOptions.siteID = process.env.NETLIFY_SITE_ID;
+      storeOptions.token = process.env.NETLIFY_ACCESS_TOKEN;
     }
+    netlifyStore = getStore(storeOptions);
+    return netlifyStore;
+  } catch {
+    return null;
   }
+}
 
-  console.log('Seeding initial restaurant database from project sources...');
-  
+/**
+ * Seed initial database records in memory
+ */
+function initDatabaseInMemory() {
   // Hash initial password for Kitchen Head account
   const initialEmail = process.env.INITIAL_ADMIN_EMAIL || 'joelramireddy@gmail.com';
   const initialPassword = process.env.INITIAL_ADMIN_PASSWORD || 'RedBucket@2026';
@@ -86,16 +88,89 @@ function initDatabase() {
     menuItems: seededMenuItems,
     categories: BUCKET_EXPERIENCES,
     contact: seededContact,
-    activity: initialActivity
+    activity: initialActivity,
+    sessions: {}
   };
-
-  saveDatabaseSync();
 }
 
 /**
- * Persist database to disk atomically
+ * Ensure database is loaded (from Netlify Blobs in cloud, or local file, or seed)
+ */
+export async function ensureDatabaseLoaded() {
+  if (db && db.menuItems && db.menuItems.length > 0) return db;
+
+  // 1. Try loading from Netlify Blobs if in Netlify environment
+  const store = await getNetlifyStore();
+  if (store) {
+    try {
+      const remoteDb = await store.get('restaurant_db', { type: 'json' });
+      if (remoteDb && remoteDb.users && remoteDb.menuItems) {
+        db = remoteDb;
+        if (!db.sessions) db.sessions = {};
+        console.log('[DB] Loaded database from persistent Netlify Blobs storage.');
+        return db;
+      }
+    } catch (err) {
+      console.warn('[DB] Could not load from Netlify Blobs, falling back:', err.message);
+    }
+  }
+
+  // 2. Try loading from local file
+  if (fs.existsSync(DB_FILE)) {
+    try {
+      const raw = fs.readFileSync(DB_FILE, 'utf-8');
+      db = JSON.parse(raw);
+      if (!db.users) db.users = [];
+      if (!db.menuItems) db.menuItems = [];
+      if (!db.categories) db.categories = [];
+      if (!db.contact) db.contact = {};
+      if (!db.activity) db.activity = [];
+      if (!db.sessions) db.sessions = {};
+      return db;
+    } catch (err) {
+      console.error('[DB] Error reading database file, re-seeding:', err);
+    }
+  }
+
+  // 3. Seed initial database in memory
+  console.log('[DB] Seeding initial restaurant database from project sources...');
+  initDatabaseInMemory();
+
+  // Persist seed
+  if (store) {
+    try {
+      await store.setJSON('restaurant_db', db);
+      console.log('[DB] Seeded database persisted to Netlify Blobs.');
+    } catch (err) {
+      console.warn('[DB] Failed to persist initial seed to Netlify Blobs:', err.message);
+    }
+  } else {
+    saveDatabaseSync();
+  }
+
+  return db;
+}
+
+/**
+ * Persist database changes (to Netlify Blobs and local disk)
+ */
+export async function saveDatabase() {
+  saveDatabaseSync();
+  const store = await getNetlifyStore();
+  if (store && db) {
+    try {
+      await store.setJSON('restaurant_db', db);
+    } catch (err) {
+      console.error('[DB] Error persisting to Netlify Blobs:', err);
+    }
+  }
+}
+
+/**
+ * Persist database to disk atomically (when writable)
  */
 function saveDatabaseSync() {
+  if (!db) return;
   try {
     const dir = path.dirname(DB_FILE);
     if (!fs.existsSync(dir)) {
@@ -105,24 +180,40 @@ function saveDatabaseSync() {
     fs.writeFileSync(tempFile, JSON.stringify(db, null, 2), 'utf-8');
     fs.renameSync(tempFile, DB_FILE);
   } catch (err) {
-    console.error('Failed to save database file:', err);
+    // In serverless environment, disk outside /tmp is read-only
+    try {
+      fs.writeFileSync('/tmp/restaurant_db.json', JSON.stringify(db, null, 2), 'utf-8');
+    } catch {
+      // Ignore
+    }
   }
 }
 
-// Ensure database is ready
-initDatabase();
+// Immediate synchronous load attempt for local dev
+try {
+  if (fs.existsSync(DB_FILE)) {
+    const raw = fs.readFileSync(DB_FILE, 'utf-8');
+    db = JSON.parse(raw);
+  }
+} catch {
+  // Ignored - ensureDatabaseLoaded will handle it
+}
+if (!db) {
+  initDatabaseInMemory();
+}
 
 /* =========================================================================
    USER & AUTH METHODS
    ========================================================================= */
 
 export function getUserByEmail(email) {
-  if (!email) return null;
+  if (!email || !db) return null;
   const normalized = email.trim().toLowerCase();
   return db.users.find((u) => u.email.toLowerCase() === normalized) || null;
 }
 
 export function getUserById(id) {
+  if (!db) return null;
   return db.users.find((u) => u.id === id) || null;
 }
 
@@ -134,37 +225,66 @@ export function updateUserPassword(userId, newSalt, newHash, userEmail) {
   user.mustChangePassword = false;
   user.updatedAt = new Date().toISOString();
   logActivity('PASSWORD_CHANGED', 'Kitchen Head password changed successfully', 'Account', userEmail || user.email);
-  saveDatabaseSync();
+  saveDatabase();
   return true;
 }
 
 export function createSession(user) {
-  const token = Math.random().toString(36).substring(2) + Date.now().toString(36) + Math.random().toString(36).substring(2);
   const sessionData = {
     userId: user.id,
     email: user.email,
+    name: user.name,
     role: user.role,
     mustChangePassword: user.mustChangePassword,
     expiresAt: Date.now() + 24 * 60 * 60 * 1000 // 24 hours
   };
+  const token = createSignedToken(sessionData);
   activeSessions.set(token, sessionData);
+  if (db) {
+    if (!db.sessions) db.sessions = {};
+    db.sessions[token] = sessionData;
+    saveDatabase();
+  }
   return token;
 }
 
 export function getSession(token) {
   if (!token) return null;
+
+  // 1. Verify signed token statelessly
+  const verified = verifySignedToken(token);
+  if (verified) return verified;
+
+  // 2. Fallback to activeSessions in memory
   const session = activeSessions.get(token);
-  if (!session) return null;
-  if (Date.now() > session.expiresAt) {
-    activeSessions.delete(token);
-    return null;
+  if (session) {
+    if (Date.now() > session.expiresAt) {
+      activeSessions.delete(token);
+      return null;
+    }
+    return session;
   }
-  return session;
+
+  // 3. Fallback to db.sessions
+  if (db && db.sessions && db.sessions[token]) {
+    const dbSession = db.sessions[token];
+    if (Date.now() > dbSession.expiresAt) {
+      delete db.sessions[token];
+      return null;
+    }
+    return dbSession;
+  }
+
+  return null;
 }
 
 export function deleteSession(token) {
   if (!token) return;
   activeSessions.delete(token);
+  if (db && db.sessions && db.sessions[token]) {
+    delete db.sessions[token];
+    saveDatabase();
+  }
 }
 
 /* =========================================================================
@@ -201,7 +321,7 @@ export function addMenuItem(newItemData, userEmail) {
 
   db.menuItems.unshift(item);
   logActivity('ITEM_ADDED', `Added new menu item: "${item.name}" (₹${item.price})`, 'Menu', userEmail);
-  saveDatabaseSync();
+  saveDatabase();
   return item;
 }
 
@@ -220,7 +340,7 @@ export function updateMenuItem(id, updates, userEmail) {
 
   db.menuItems[index] = updated;
   logActivity('ITEM_EDITED', `Updated details for menu item: "${updated.name}"`, 'Menu', userEmail);
-  saveDatabaseSync();
+  saveDatabase();
   return updated;
 }
 
@@ -238,7 +358,7 @@ export function toggleMenuItemAvailability(id, isAvailable, userEmail) {
     'Availability',
     userEmail
   );
-  saveDatabaseSync();
+  saveDatabase();
   return db.menuItems[index];
 }
 
@@ -249,7 +369,7 @@ export function deleteMenuItem(id, userEmail) {
   const item = db.menuItems[index];
   db.menuItems.splice(index, 1);
   logActivity('ITEM_REMOVED', `Removed menu item: "${item.name}"`, 'Menu', userEmail);
-  saveDatabaseSync();
+  saveDatabase();
   return true;
 }
 
@@ -282,7 +402,7 @@ export function updateContactInfo(newInfo, userEmail) {
   }
 
   logActivity('CONTACT_UPDATED', 'Updated restaurant contact details and opening hours', 'Contact', userEmail);
-  saveDatabaseSync();
+  saveDatabase();
   return db.contact;
 }
 
@@ -311,6 +431,8 @@ export function logActivity(action, description, section, userEmail) {
   if (db.activity.length > 300) {
     db.activity = db.activity.slice(0, 300);
   }
+
+  saveDatabase();
 }
 
 /* =========================================================================

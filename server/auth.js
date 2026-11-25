@@ -35,3 +35,47 @@ export function verifyPassword(password, salt, storedHash) {
 export function generateToken() {
   return crypto.randomBytes(32).toString('hex');
 }
+
+const SESSION_SECRET =
+  process.env.SESSION_SECRET ||
+  process.env.JWT_SECRET ||
+  'red-bucket-biryani-jodimetla-secret-key-2026';
+
+/**
+ * Create a cryptographically signed stateless session token (HMAC-SHA256)
+ */
+export function createSignedToken(payload) {
+  const data = Buffer.from(JSON.stringify(payload)).toString('base64url');
+  const signature = crypto
+    .createHmac('sha256', SESSION_SECRET)
+    .update(data)
+    .digest('base64url');
+  return `${data}.${signature}`;
+}
+
+/**
+ * Verify a signed stateless session token
+ */
+export function verifySignedToken(token) {
+  if (!token || typeof token !== 'string') return null;
+  const parts = token.split('.');
+  if (parts.length !== 2) return null;
+  const [data, signature] = parts;
+  try {
+    const expectedSig = crypto
+      .createHmac('sha256', SESSION_SECRET)
+      .update(data)
+      .digest('base64url');
+    if (signature.length !== expectedSig.length) return null;
+    if (!crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSig))) {
+      return null;
+    }
+    const payload = JSON.parse(Buffer.from(data, 'base64url').toString('utf-8'));
+    if (payload.expiresAt && Date.now() > payload.expiresAt) {
+      return null;
+    }
+    return payload;
+  } catch {
+    return null;
+  }
+}
