@@ -5,9 +5,23 @@ import { hashPassword, createSignedToken, verifySignedToken } from './auth.js';
 import { MENU_ITEMS, BUCKET_EXPERIENCES } from '../src/data/menuData.ts';
 import { RESTAURANT_INFO } from '../src/data/restaurantInfo.ts';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const DB_FILE = path.resolve(__dirname, '../data/restaurant_db.json');
+function getBaseDir() {
+  if (typeof import.meta?.dirname === 'string') {
+    return import.meta.dirname;
+  }
+  try {
+    if (typeof import.meta?.url === 'string') {
+      return path.dirname(fileURLToPath(import.meta.url));
+    }
+  } catch {}
+  if (typeof __dirname !== 'undefined' && __dirname) {
+    return __dirname;
+  }
+  return process.cwd();
+}
+
+const BASE_DIR = getBaseDir();
+const DB_FILE = path.resolve(BASE_DIR, '../data/restaurant_db.json');
 
 // In-memory database cache
 let db = null;

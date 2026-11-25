@@ -6,9 +6,23 @@ import { fileURLToPath } from 'url';
 import { requireAuth } from '../middleware.js';
 import { logActivity } from '../db.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const UPLOAD_DIR = path.resolve(__dirname, '../../public/uploads');
+function getBaseDir() {
+  if (typeof import.meta?.dirname === 'string') {
+    return import.meta.dirname;
+  }
+  try {
+    if (typeof import.meta?.url === 'string') {
+      return path.dirname(fileURLToPath(import.meta.url));
+    }
+  } catch {}
+  if (typeof __dirname !== 'undefined' && __dirname) {
+    return __dirname;
+  }
+  return process.cwd();
+}
+
+const BASE_DIR = getBaseDir();
+const UPLOAD_DIR = path.resolve(BASE_DIR, '../../public/uploads');
 
 // Attempt to create local upload directory if writable
 try {
@@ -227,7 +241,7 @@ imageRouter.get('/', requireAuth, async (req, res) => {
     }
 
     // 3. Read existing bundled bucket images
-    const bucketImagesDir = path.resolve(__dirname, '../../public/images/buckets');
+    const bucketImagesDir = path.resolve(BASE_DIR, '../../public/images/buckets');
     if (fs.existsSync(bucketImagesDir)) {
       try {
         const bucketFiles = fs.readdirSync(bucketImagesDir);

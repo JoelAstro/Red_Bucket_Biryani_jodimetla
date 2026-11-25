@@ -10,9 +10,23 @@ import { imageRouter } from './routes/imageRoutes.js';
 import { activityRouter } from './routes/activityRoutes.js';
 import { dashboardRouter } from './routes/dashboardRoutes.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const UPLOAD_DIR = path.resolve(__dirname, '../public/uploads');
+function getBaseDir() {
+  if (typeof import.meta?.dirname === 'string') {
+    return import.meta.dirname;
+  }
+  try {
+    if (typeof import.meta?.url === 'string') {
+      return path.dirname(fileURLToPath(import.meta.url));
+    }
+  } catch {}
+  if (typeof __dirname !== 'undefined' && __dirname) {
+    return __dirname;
+  }
+  return process.cwd();
+}
+
+const BASE_DIR = getBaseDir();
+const UPLOAD_DIR = path.resolve(BASE_DIR, '../public/uploads');
 
 export const apiApp = express();
 
