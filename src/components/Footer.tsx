@@ -1,10 +1,18 @@
 import React from 'react';
-import { Phone, MessageCircle, MapPin, Clock, ExternalLink, Heart } from 'lucide-react';
+import { Phone, MessageCircle, MapPin, Clock, ExternalLink, Heart, ChefHat } from 'lucide-react';
 import { Logo } from './Logo';
-import { RESTAURANT_INFO, getWhatsAppLink } from '../data/restaurantInfo';
+import { RESTAURANT_INFO, getWhatsAppLink as defaultGetWhatsAppLink } from '../data/restaurantInfo';
+import { useRestaurantData } from '../context/RestaurantDataContext';
 
-export const Footer: React.FC = () => {
+interface FooterProps {
+  onOpenAdmin?: () => void;
+}
+
+export const Footer: React.FC<FooterProps> = ({ onOpenAdmin }) => {
   const currentYear = new Date().getFullYear();
+  const restaurantContext = useRestaurantData();
+  const contact = restaurantContext?.contactInfo || RESTAURANT_INFO;
+  const getWaLink = restaurantContext?.getWhatsAppLink || defaultGetWhatsAppLink;
 
   return (
     <footer className="bg-neutral-950 border-t border-brand-red/20 pt-16 pb-12 text-cream/70 text-sm relative overflow-hidden">
@@ -125,31 +133,31 @@ export const Footer: React.FC = () => {
           {/* Contact & Branch Info */}
           <div className="lg:col-span-3 space-y-3">
             <h4 className="text-white font-black text-sm uppercase tracking-wider font-['Montserrat',sans-serif]">
-              Jodimetla Branch
+              {contact.branchName}
             </h4>
 
             <div className="space-y-2.5 text-xs">
               <div className="flex items-start gap-2">
                 <MapPin className="w-4 h-4 text-brand-red shrink-0 mt-0.5" />
-                <span>Red Bucket Biryani, Jodimetla, Hyderabad, Telangana</span>
+                <span>{contact.address}</span>
               </div>
 
               <div className="flex items-center gap-2">
                 <Clock className="w-4 h-4 text-gold shrink-0" />
-                <span>{RESTAURANT_INFO.openingHours.days}: {RESTAURANT_INFO.openingHours.timings}</span>
+                <span>{contact.openingHours.days}: {contact.openingHours.timings}</span>
               </div>
 
               <div className="flex items-center gap-2">
                 <Phone className="w-4 h-4 text-gold shrink-0" />
-                <a href={RESTAURANT_INFO.telLink} className="hover:text-gold font-bold">
-                  {RESTAURANT_INFO.displayPhone}
+                <a href={contact.telLink} className="hover:text-gold font-bold">
+                  {contact.displayPhone}
                 </a>
               </div>
 
               <div className="flex items-center gap-2">
                 <MessageCircle className="w-4 h-4 text-emerald-400 shrink-0" />
                 <a
-                  href={getWhatsAppLink()}
+                  href={getWaLink()}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hover:text-emerald-400 font-bold"
@@ -161,7 +169,7 @@ export const Footer: React.FC = () => {
 
             <div className="pt-2">
               <a
-                href={RESTAURANT_INFO.googleMapsUrl}
+                href={contact.googleMapsUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 text-xs text-gold hover:underline font-bold"
@@ -177,12 +185,23 @@ export const Footer: React.FC = () => {
         {/* Bottom Copyright & Disclaimer */}
         <div className="border-t border-white/10 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-cream/50 text-center sm:text-left">
           <div>
-            © {currentYear} {RESTAURANT_INFO.brandName} – {RESTAURANT_INFO.branchName}. All rights reserved.
+            © {currentYear} {contact.brandName} – {contact.branchName}. All rights reserved.
           </div>
-          <div className="flex items-center gap-1">
-            <span>Crafted with</span>
-            <Heart className="w-3.5 h-3.5 text-brand-red fill-brand-red" />
-            <span>for Biryani Lovers in Hyderabad</span>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-1">
+              <span>Crafted with</span>
+              <Heart className="w-3.5 h-3.5 text-brand-red fill-brand-red" />
+              <span>for Biryani Lovers in Hyderabad</span>
+            </div>
+            <span className="text-white/20">|</span>
+            <button
+              onClick={onOpenAdmin || (() => { window.location.hash = '#admin'; })}
+              className="inline-flex items-center gap-1 text-cream/40 hover:text-gold transition-colors text-[11px]"
+              title="Kitchen Head Administrative Portal"
+            >
+              <ChefHat className="w-3.5 h-3.5 text-brand-red" />
+              <span>Kitchen Console</span>
+            </button>
           </div>
         </div>
 

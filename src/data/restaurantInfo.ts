@@ -3,6 +3,7 @@ export interface RestaurantInfo {
   fullName: string;
   branchName: string;
   locationName: string;
+  address: string;
   phone: string;
   displayPhone: string;
   telLink: string;
@@ -28,6 +29,7 @@ export const RESTAURANT_INFO: RestaurantInfo = {
   fullName: "Red Bucket Biryani | Jodimetla",
   branchName: "Jodimetla Branch",
   locationName: "Jodimetla, Hyderabad",
+  address: "Red Bucket Biryani, Jodimetla, Hyderabad, Telangana",
   phone: "8008906029",
   displayPhone: "+91 80089 06029",
   telLink: "tel:+918008906029",

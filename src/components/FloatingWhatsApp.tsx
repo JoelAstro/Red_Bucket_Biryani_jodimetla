@@ -1,9 +1,13 @@
 import React, { useState } from 'react';
 import { Phone, X } from 'lucide-react';
-import { RESTAURANT_INFO, getWhatsAppLink } from '../data/restaurantInfo';
+import { RESTAURANT_INFO, getWhatsAppLink as defaultGetWhatsAppLink } from '../data/restaurantInfo';
+import { useRestaurantData } from '../context/RestaurantDataContext';
 
 export const FloatingWhatsApp: React.FC = () => {
   const [showTooltip, setShowTooltip] = useState(false);
+  const data = useRestaurantData();
+  const contact = data?.contactInfo || RESTAURANT_INFO;
+  const getWaLink = data?.getWhatsAppLink || defaultGetWhatsAppLink;
 
   return (
     <aside
@@ -35,9 +39,9 @@ export const FloatingWhatsApp: React.FC = () => {
       <div className="flex items-center gap-2">
         {/* Floating Call Button */}
         <a
-          href={RESTAURANT_INFO.telLink}
+          href={contact.telLink}
           className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-neutral-900/95 border border-gold/50 text-gold hover:bg-gold hover:text-neutral-950 flex items-center justify-center shadow-xl hover:scale-105 active:scale-95 transition-all"
-          title={`Call ${RESTAURANT_INFO.displayPhone}`}
+          title={`Call ${contact.displayPhone}`}
           aria-label="Call Restaurant"
         >
           <Phone className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
@@ -45,7 +49,7 @@ export const FloatingWhatsApp: React.FC = () => {
 
         {/* Floating WhatsApp Button */}
         <a
-          href={getWhatsAppLink()}
+          href={getWaLink()}
           target="_blank"
           rel="noopener noreferrer"
           className="relative w-12 h-12 sm:w-13 sm:h-13 rounded-full bg-[#25D366] hover:bg-[#20BA56] text-white flex items-center justify-center shadow-xl shadow-emerald-950/40 hover:scale-105 active:scale-95 transition-all"

@@ -1,14 +1,19 @@
 import React, { useState } from 'react';
 import { Search, Users, Phone, MessageCircle, Sparkles } from 'lucide-react';
-import { MENU_ITEMS } from '../data/menuData';
-import type { BucketCategoryKey } from '../data/menuData';
-import { RESTAURANT_INFO, getOrderItemWhatsAppLink } from '../data/restaurantInfo';
+import { MENU_ITEMS, type BucketCategoryKey } from '../data/menuData';
+import { RESTAURANT_INFO, getOrderItemWhatsAppLink as defaultGetOrderItemWhatsAppLink } from '../data/restaurantInfo';
+import { useRestaurantData } from '../context/RestaurantDataContext';
 
 interface CompleteMenuProps {
   selectedCategory?: BucketCategoryKey;
 }
 
 export const CompleteMenu: React.FC<CompleteMenuProps> = ({ selectedCategory: propCategory }) => {
+  const restaurantContext = useRestaurantData();
+  const allItems = restaurantContext?.menuItems || MENU_ITEMS;
+  const contactInfo = restaurantContext?.contactInfo || RESTAURANT_INFO;
+  const getOrderItemWhatsApp = restaurantContext?.getOrderItemWhatsAppLink || defaultGetOrderItemWhatsAppLink;
+
   const [activeCategory, setActiveCategory] = useState<BucketCategoryKey | 'all'>(
     propCategory || 'solo'
   );
@@ -26,7 +31,7 @@ export const CompleteMenu: React.FC<CompleteMenuProps> = ({ selectedCategory: pr
   ] as const;
 
   // Filter items
-  const filteredItems = MENU_ITEMS.filter((item) => {
+  const filteredItems = allItems.filter((item) => {
     // Category match
     const matchesCategory = activeCategory === 'all' || item.bucketCategory === activeCategory;
 
@@ -157,98 +162,118 @@ export const CompleteMenu: React.FC<CompleteMenuProps> = ({ selectedCategory: pr
 
         {/* Menu Cards Grid */}
         <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {filteredItems.map((item) => (
-            <div
-              key={item.id}
-              className="group relative bg-neutral-900/70 hover:bg-neutral-900 rounded-2xl p-5 border border-white/5 hover:border-brand-red/40 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-brand-red/10 flex flex-col justify-between"
-            >
-              <div>
-                {/* Header: Dietary Dot + Serving Badge + Bestseller */}
-                <div className="flex items-center justify-between gap-2 mb-3">
-                  <div className="flex items-center gap-2">
-                    {/* Food Dot Indicator (Green for Veg, Red for Non-Veg) */}
-                    <div
-                      className={`w-4 h-4 rounded-sm border p-0.5 flex items-center justify-center ${
-                        item.isVeg ? 'border-emerald-500' : 'border-red-600'
-                      }`}
-                      title={item.isVeg ? 'Vegetarian' : 'Non-Vegetarian'}
-                    >
+          {filteredItems.map((item) => {
+            const isAvail = (item as any).isAvailable !== false;
+            return (
+              <div
+                key={item.id}
+                className={`group relative bg-neutral-900/70 hover:bg-neutral-900 rounded-2xl p-5 border transition-all duration-300 shadow-lg hover:shadow-xl flex flex-col justify-between ${
+                  isAvail
+                    ? 'border-white/5 hover:border-brand-red/40 hover:shadow-brand-red/10'
+                    : 'border-amber-500/20 opacity-80 bg-neutral-950/60'
+                }`}
+              >
+                <div>
+                  {/* Header: Dietary Dot + Serving Badge + Availability / Bestseller */}
+                  <div className="flex items-center justify-between gap-2 mb-3">
+                    <div className="flex items-center gap-2">
+                      {/* Food Dot Indicator (Green for Veg, Red for Non-Veg) */}
                       <div
-                        className={`w-2 h-2 rounded-full ${
-                          item.isVeg ? 'bg-emerald-500' : 'bg-red-600'
+                        className={`w-4 h-4 rounded-sm border p-0.5 flex items-center justify-center ${
+                          item.isVeg ? 'border-emerald-500' : 'border-red-600'
                         }`}
-                      />
+                        title={item.isVeg ? 'Vegetarian' : 'Non-Vegetarian'}
+                      >
+                        <div
+                          className={`w-2 h-2 rounded-full ${
+                            item.isVeg ? 'bg-emerald-500' : 'bg-red-600'
+                          }`}
+                        />
+                      </div>
+
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-cream/60">
+                        {item.foodCategory}
+                      </span>
                     </div>
 
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-cream/60">
-                      {item.foodCategory}
-                    </span>
+                    <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                      {!isAvail ? (
+                        <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-amber-950/80 text-amber-300 border border-amber-500/40">
+                          Currently Sold Out
+                        </span>
+                      ) : item.isBestseller ? (
+                        <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-brand-red/20 text-brand-red border border-brand-red/30">
+                          Popular
+                        </span>
+                      ) : null}
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-white/5 text-gold border border-white/10">
+                        Serves {item.serves}
+                      </span>
+                    </div>
                   </div>
 
-                  <div className="flex items-center gap-1.5">
-                    {item.isBestseller && (
-                      <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-brand-red/20 text-brand-red border border-brand-red/30">
-                        Popular
+                  {/* Item Name */}
+                  <h3 className="text-base sm:text-lg font-black text-white font-['Montserrat',sans-serif] group-hover:text-gold transition-colors">
+                    {item.name}
+                  </h3>
+
+                  {/* Bucket Category Label */}
+                  <div className="text-xs font-semibold text-brand-red mt-0.5">
+                    {item.bucketLabel}
+                  </div>
+
+                  {/* Description */}
+                  {item.description && (
+                    <p className="text-xs text-cream/70 mt-2 line-clamp-2 leading-relaxed">
+                      {item.description}
+                    </p>
+                  )}
+                </div>
+
+                {/* Price & Action CTA */}
+                <div className="mt-5 pt-4 border-t border-white/5 flex items-center justify-between gap-3">
+                  <div>
+                    <div className="text-[10px] text-cream/50 uppercase tracking-wider">Price</div>
+                    <div className="text-xl sm:text-2xl font-black text-gold">
+                      ₹{item.price.toLocaleString('en-IN')}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    {/* WhatsApp Order Button or Sold Out indicator */}
+                    {isAvail ? (
+                      <a
+                        href={getOrderItemWhatsApp(item.name, item.bucketLabel, item.price)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gradient-to-r from-brand-red to-deep-red hover:from-red-600 hover:to-brand-red text-white text-xs font-extrabold shadow-md shadow-brand-red/30 transition-all hover:scale-105 active:scale-95"
+                        title={`Order ${item.name} via WhatsApp`}
+                      >
+                        <MessageCircle className="w-3.5 h-3.5 fill-white" />
+                        <span>Order</span>
+                      </a>
+                    ) : (
+                      <span
+                        className="px-3 py-2 rounded-xl bg-neutral-800 text-cream/40 text-xs font-bold border border-white/5 cursor-not-allowed"
+                        title="This dish is currently sold out for today"
+                      >
+                        Sold Out
                       </span>
                     )}
-                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-white/5 text-gold border border-white/10">
-                      Serves {item.serves}
-                    </span>
+
+                    {/* Call Direct */}
+                    <a
+                      href={contactInfo.telLink}
+                      className="p-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-gold border border-gold/30"
+                      title="Call Branch to Inquire"
+                    >
+                      <Phone className="w-3.5 h-3.5" />
+                    </a>
                   </div>
                 </div>
-
-                {/* Item Name */}
-                <h3 className="text-base sm:text-lg font-black text-white font-['Montserrat',sans-serif] group-hover:text-gold transition-colors">
-                  {item.name}
-                </h3>
-
-                {/* Bucket Category Label */}
-                <div className="text-xs font-semibold text-brand-red mt-0.5">
-                  {item.bucketLabel}
-                </div>
-
-                {/* Description */}
-                {item.description && (
-                  <p className="text-xs text-cream/70 mt-2 line-clamp-2 leading-relaxed">
-                    {item.description}
-                  </p>
-                )}
               </div>
-
-              {/* Price & Action CTA */}
-              <div className="mt-5 pt-4 border-t border-white/5 flex items-center justify-between gap-3">
-                <div>
-                  <div className="text-[10px] text-cream/50 uppercase tracking-wider">Price</div>
-                  <div className="text-xl sm:text-2xl font-black text-gold">
-                    ₹{item.price.toLocaleString('en-IN')}
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  {/* WhatsApp Order Button */}
-                  <a
-                    href={getOrderItemWhatsAppLink(item.name, item.bucketLabel, item.price)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gradient-to-r from-brand-red to-deep-red hover:from-red-600 hover:to-brand-red text-white text-xs font-extrabold shadow-md shadow-brand-red/30 transition-all hover:scale-105 active:scale-95"
-                    title={`Order ${item.name} via WhatsApp`}
-                  >
-                    <MessageCircle className="w-3.5 h-3.5 fill-white" />
-                    <span>Order</span>
-                  </a>
-
-                  {/* Call Direct */}
-                  <a
-                    href={RESTAURANT_INFO.telLink}
-                    className="p-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-gold border border-gold/30"
-                    title="Call Branch to Order"
-                  >
-                    <Phone className="w-3.5 h-3.5" />
-                  </a>
-                </div>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Empty state if search yields no results */}
@@ -273,16 +298,16 @@ export const CompleteMenu: React.FC<CompleteMenuProps> = ({ selectedCategory: pr
           <div className="space-y-1 text-center md:text-left">
             <h4 className="text-base font-bold text-white">Ordering for a party or celebration in Jodimetla?</h4>
             <p className="text-xs text-cream/70">
-              Pre-book celebration buckets and Mighty Sixty catering by calling {RESTAURANT_INFO.phone}.
+              Pre-book celebration buckets and Mighty Sixty catering by calling {contactInfo.phone}.
             </p>
           </div>
           <div className="flex items-center gap-3">
             <a
-              href={RESTAURANT_INFO.telLink}
+              href={contactInfo.telLink}
               className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gold text-neutral-950 font-black text-xs uppercase tracking-wider hover:brightness-110 shadow-lg"
             >
               <Phone className="w-4 h-4" />
-              <span>Call: {RESTAURANT_INFO.phone}</span>
+              <span>Call: {contactInfo.phone}</span>
             </a>
           </div>
         </div>

@@ -1,12 +1,16 @@
 import React from 'react';
 import { MapPin, Navigation, Clock, Phone, MessageCircle, ExternalLink } from 'lucide-react';
-import { RESTAURANT_INFO, getWhatsAppLink, isRestaurantOpenNow } from '../data/restaurantInfo';
+import { RESTAURANT_INFO, getWhatsAppLink as defaultGetWhatsAppLink, isRestaurantOpenNow } from '../data/restaurantInfo';
+import { useRestaurantData } from '../context/RestaurantDataContext';
 
 export const LocationSection: React.FC = () => {
   const openStatus = isRestaurantOpenNow();
+  const data = useRestaurantData();
+  const contact = data?.contactInfo || RESTAURANT_INFO;
+  const getWaLink = data?.getWhatsAppLink || defaultGetWhatsAppLink;
 
   // Embedded Google Map pointing to exact coordinates: 17.4248694, 78.6443877
-  const mapEmbedUrl = `https://maps.google.com/maps?q=${RESTAURANT_INFO.coordinates.lat},${RESTAURANT_INFO.coordinates.lng}&hl=en&z=17&output=embed`;
+  const mapEmbedUrl = `https://maps.google.com/maps?q=${contact.coordinates?.lat || RESTAURANT_INFO.coordinates.lat},${contact.coordinates?.lng || RESTAURANT_INFO.coordinates.lng}&hl=en&z=17&output=embed`;
 
   return (
     <section id="location" className="py-20 md:py-28 bg-[#140d0d] relative overflow-hidden">
@@ -30,7 +34,7 @@ export const LocationSection: React.FC = () => {
           </h2>
 
           <p className="text-base sm:text-lg text-cream/70 font-normal">
-            Conveniently located at Jodimetla, Hyderabad. Stop by for hot takeaway buckets or order ahead for zero wait time.
+            Conveniently located at {contact.branchName}, Hyderabad. Stop by for hot takeaway buckets or order ahead for zero wait time.
           </p>
         </div>
 
@@ -47,17 +51,17 @@ export const LocationSection: React.FC = () => {
                   Sole Official Branch
                 </span>
                 <h3 className="text-2xl sm:text-3xl font-black text-white font-['Montserrat',sans-serif]">
-                  {RESTAURANT_INFO.fullName}
+                  {contact.fullName}
                 </h3>
                 <p className="text-sm text-cream/80 flex items-start gap-2 pt-1">
                   <MapPin className="w-4 h-4 text-brand-red shrink-0 mt-0.5" />
-                  <span>Jodimetla, Hyderabad, Telangana</span>
+                  <span>{contact.address}</span>
                 </p>
               </div>
 
               {/* Coordinates Pill */}
               <div className="text-xs text-cream/50 bg-neutral-950/60 p-3 rounded-xl border border-white/5 font-mono">
-                Coordinates: {RESTAURANT_INFO.coordinates.lat}° N, {RESTAURANT_INFO.coordinates.lng}° E
+                Coordinates: {contact.coordinates?.lat || RESTAURANT_INFO.coordinates.lat}° N, {contact.coordinates?.lng || RESTAURANT_INFO.coordinates.lng}° E
               </div>
 
               {/* Opening Hours Card */}
@@ -75,8 +79,8 @@ export const LocationSection: React.FC = () => {
                 </div>
 
                 <div className="flex items-center justify-between pt-1">
-                  <span className="text-base font-extrabold text-white">{RESTAURANT_INFO.openingHours.days}</span>
-                  <span className="text-base font-black text-gold">{RESTAURANT_INFO.openingHours.timings}</span>
+                  <span className="text-base font-extrabold text-white">{contact.openingHours.days}</span>
+                  <span className="text-base font-black text-gold">{contact.openingHours.timings}</span>
                 </div>
 
                 <div className="text-[11px] text-cream/60 border-t border-white/5 pt-2">
@@ -91,15 +95,15 @@ export const LocationSection: React.FC = () => {
                 </div>
                 <div className="flex flex-col sm:flex-row gap-3">
                   <a
-                    href={RESTAURANT_INFO.telLink}
+                    href={contact.telLink}
                     className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-gold text-neutral-950 font-black text-xs uppercase tracking-wider hover:brightness-110 transition-all shadow-md"
                   >
                     <Phone className="w-4 h-4" />
-                    <span>Call {RESTAURANT_INFO.phone}</span>
+                    <span>Call {contact.phone}</span>
                   </a>
 
                   <a
-                    href={getWhatsAppLink()}
+                    href={getWaLink()}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider transition-all shadow-md"
@@ -112,7 +116,7 @@ export const LocationSection: React.FC = () => {
 
               {/* Get Directions Button */}
               <a
-                href={RESTAURANT_INFO.googleMapsUrl}
+                href={contact.googleMapsUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-gradient-to-r from-brand-red to-deep-red hover:from-red-600 hover:to-brand-red text-white font-black text-sm uppercase tracking-wider shadow-xl shadow-brand-red/30 transition-all hover:scale-[1.02]"

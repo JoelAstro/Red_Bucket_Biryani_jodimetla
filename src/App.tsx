@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Navbar } from './components/Navbar';
 import { Hero } from './components/Hero';
 import { FeaturedBanner } from './components/FeaturedBanner';
@@ -11,9 +11,11 @@ import { GoogleReviews } from './components/GoogleReviews';
 import { LocationSection } from './components/LocationSection';
 import { Footer } from './components/Footer';
 import { FloatingWhatsApp } from './components/FloatingWhatsApp';
+import { RestaurantDataProvider } from './context/RestaurantDataContext';
+import { AdminPortal } from './admin/AdminPortal';
 import type { BucketCategoryKey } from './data/menuData';
 
-export function App() {
+function WebsiteContent({ onOpenAdmin }: { onOpenAdmin: () => void }) {
   const [selectedCategory, setSelectedCategory] = useState<BucketCategoryKey>('solo');
 
   const handleSelectBucketCategory = (category: BucketCategoryKey) => {
@@ -29,7 +31,7 @@ export function App() {
       {/* Sticky Top Navbar */}
       <Navbar />
 
-      {/* Hero Section with Interactive 3D Biryani Bucket */}
+      {/* Hero Section with Official Campaign Photography */}
       <main className="flex-grow">
         <Hero />
 
@@ -42,7 +44,7 @@ export function App() {
         {/* Special All Mix & Mighty Sixty Experiences */}
         <SpecialPacksShowcase />
 
-        {/* Complete Menu with Accurate Prices and Filters */}
+        {/* Complete Menu with Live Availability & Accurate Prices */}
         <CompleteMenu selectedCategory={selectedCategory} />
 
         {/* Brand Storytelling: Why Red Bucket Biryani */}
@@ -58,12 +60,69 @@ export function App() {
         <LocationSection />
       </main>
 
-      {/* Premium Footer */}
-      <Footer />
+      {/* Premium Footer with Discreet Kitchen Console Link */}
+      <Footer onOpenAdmin={onOpenAdmin} />
 
       {/* Sticky Floating WhatsApp & Call CTA */}
       <FloatingWhatsApp />
     </div>
+  );
+}
+
+export function App() {
+  const [isAdminView, setIsAdminView] = useState(() => {
+    return (
+      window.location.hash === '#admin' ||
+      window.location.hash.startsWith('#admin/') ||
+      window.location.pathname === '/admin' ||
+      window.location.pathname.startsWith('/admin/')
+    );
+  });
+
+  useEffect(() => {
+    const checkRoute = () => {
+      const isNowAdmin = (
+        window.location.hash === '#admin' ||
+        window.location.hash.startsWith('#admin/') ||
+        window.location.pathname === '/admin' ||
+        window.location.pathname.startsWith('/admin/')
+      );
+      setIsAdminView(isNowAdmin);
+    };
+
+    window.addEventListener('hashchange', checkRoute);
+    window.addEventListener('popstate', checkRoute);
+    return () => {
+      window.removeEventListener('hashchange', checkRoute);
+      window.removeEventListener('popstate', checkRoute);
+    };
+  }, []);
+
+  const handleOpenAdmin = () => {
+    window.location.hash = '#admin';
+    setIsAdminView(true);
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  };
+
+  const handleBackToSite = () => {
+    if (window.location.hash.startsWith('#admin')) {
+      window.location.hash = '';
+    }
+    if (window.location.pathname.startsWith('/admin')) {
+      window.history.pushState(null, '', '/');
+    }
+    setIsAdminView(false);
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  };
+
+  return (
+    <RestaurantDataProvider>
+      {isAdminView ? (
+        <AdminPortal onBackToSite={handleBackToSite} />
+      ) : (
+        <WebsiteContent onOpenAdmin={handleOpenAdmin} />
+      )}
+    </RestaurantDataProvider>
   );
 }
 

@@ -19,6 +19,9 @@ dist-ssr
 *.local
 .gemini
 
+# Local Database & Dynamic Uploads
+data/restaurant_db.json*
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

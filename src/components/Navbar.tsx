@@ -1,13 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { Phone, MessageCircle, Menu as MenuIcon, X, MapPin } from 'lucide-react';
 import { Logo } from './Logo';
-import { RESTAURANT_INFO, getWhatsAppLink, isRestaurantOpenNow } from '../data/restaurantInfo';
+import { RESTAURANT_INFO, getWhatsAppLink as defaultGetWhatsAppLink, isRestaurantOpenNow } from '../data/restaurantInfo';
+import { useRestaurantData } from '../context/RestaurantDataContext';
 
 export const Navbar: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState('home');
   const openStatus = isRestaurantOpenNow();
+
+  const data = useRestaurantData();
+  const contact = data?.contactInfo || RESTAURANT_INFO;
+  const getWaLink = data?.getWhatsAppLink || defaultGetWhatsAppLink;
 
   const navLinks = [
     { name: 'Home', href: '#home', id: 'home' },
@@ -139,17 +144,17 @@ export const Navbar: React.FC = () => {
             <div className="hidden lg:flex items-center gap-2.5 xl:gap-3 shrink-0">
               {/* Call Button */}
               <a
-                href={RESTAURANT_INFO.telLink}
+                href={contact.telLink}
                 className="h-10 inline-flex items-center justify-center gap-2 px-3.5 xl:px-4 rounded-xl bg-neutral-900 border border-gold/50 text-gold hover:bg-gold hover:text-neutral-950 font-bold text-xs xl:text-sm transition-all shadow-md active:scale-95"
-                title={`Call ${RESTAURANT_INFO.displayPhone}`}
+                title={`Call ${contact.displayPhone}`}
               >
                 <Phone className="w-3.5 h-3.5" />
-                <span>Call {RESTAURANT_INFO.phone}</span>
+                <span>Call {contact.phone}</span>
               </a>
 
               {/* Order Now Button */}
               <a
-                href={getWhatsAppLink()}
+                href={getWaLink()}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="h-10 inline-flex items-center justify-center gap-2 px-4 xl:px-5 rounded-xl bg-gradient-to-r from-brand-red to-deep-red hover:from-red-600 hover:to-brand-red text-white font-black text-xs xl:text-sm uppercase tracking-wider transition-all shadow-lg shadow-brand-red/30 hover:scale-[1.03] active:scale-95"
@@ -256,16 +261,16 @@ export const Navbar: React.FC = () => {
             <div className="sticky bottom-0 z-20 p-4 sm:p-5 border-t border-white/10 bg-neutral-950/95 backdrop-blur-md space-y-2.5 sm:space-y-3 shrink-0 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
               {/* Call Button */}
               <a
-                href={RESTAURANT_INFO.telLink}
+                href={contact.telLink}
                 className="w-full h-12 flex items-center justify-center gap-2 rounded-xl bg-neutral-900 border border-gold/50 text-gold font-bold text-sm shadow-md active:scale-98"
               >
                 <Phone className="w-4 h-4" />
-                <span>Call to Order: {RESTAURANT_INFO.phone}</span>
+                <span>Call to Order: {contact.phone}</span>
               </a>
 
               {/* Order via WhatsApp */}
               <a
-                href={getWhatsAppLink()}
+                href={getWaLink()}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-full h-12 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-brand-red to-deep-red text-white font-black text-sm uppercase tracking-wider shadow-lg shadow-brand-red/40 active:scale-98"
@@ -276,7 +281,7 @@ export const Navbar: React.FC = () => {
 
               <div className="pt-2 text-center text-xs text-cream/50 flex items-center justify-center gap-1.5">
                 <MapPin className="w-3.5 h-3.5 text-brand-red shrink-0" />
-                <span>Jodimetla Branch, Hyderabad</span>
+                <span>{contact.branchName}, Hyderabad</span>
               </div>
             </div>
 
