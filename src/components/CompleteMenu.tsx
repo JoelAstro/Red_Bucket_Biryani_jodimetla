@@ -46,7 +46,7 @@ export const CompleteMenu: React.FC<CompleteMenuProps> = ({ selectedCategory: pr
   });
 
   return (
-    <section id="menu" className="py-20 md:py-28 bg-[#140d0d] relative">
+    <section id="menu" className="py-20 md:py-28 bg-[#140d0d] relative overflow-hidden">
       {/* Background radial atmosphere */}
       <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-brand-red/10 rounded-full blur-[160px] pointer-events-none" />
 

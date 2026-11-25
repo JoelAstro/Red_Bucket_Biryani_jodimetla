@@ -14,7 +14,7 @@ export const FoodGallery: React.FC = () => {
       : GALLERY_ITEMS.filter((item) => item.categoryKey === activeCategory);
 
   return (
-    <section id="gallery" className="py-20 md:py-28 bg-[#120b0b] relative">
+    <section id="gallery" className="py-20 md:py-28 bg-[#120b0b] relative overflow-hidden">
       {/* Ambient background light */}
       <div className="absolute top-1/4 right-1/3 w-[500px] h-[500px] bg-brand-red/10 rounded-full blur-[140px] pointer-events-none" />
 

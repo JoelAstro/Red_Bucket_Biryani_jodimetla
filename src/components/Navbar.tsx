@@ -57,6 +57,26 @@ export const Navbar: React.FC = () => {
     };
   }, [mobileMenuOpen]);
 
+  // Close menu on Escape key press or screen enlargement
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && mobileMenuOpen) {
+        setMobileMenuOpen(false);
+      }
+    };
+    const handleResize = () => {
+      if (window.innerWidth >= 1024 && mobileMenuOpen) {
+        setMobileMenuOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [mobileMenuOpen]);
+
   const handleNavLinkClick = () => {
     setMobileMenuOpen(false);
   };
@@ -65,7 +85,7 @@ export const Navbar: React.FC = () => {
     <>
       {/* Header Container */}
       <header
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        className={`fixed top-0 left-0 right-0 z-50 w-full max-w-full transition-all duration-300 ${
           isScrolled
             ? 'bg-neutral-950/95 backdrop-blur-md shadow-xl border-b border-brand-red/20 py-2 sm:py-2.5'
             : 'bg-gradient-to-b from-neutral-950/95 via-neutral-950/80 to-transparent py-2.5 sm:py-3.5'
@@ -170,10 +190,10 @@ export const Navbar: React.FC = () => {
       </header>
 
       {/* ========================================================= */}
-      {/* MOBILE NAVIGATION DRAWER                                   */}
+      {/* MOBILE NAVIGATION DRAWER / SIDEBAR                         */}
       {/* ========================================================= */}
       {mobileMenuOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden">
+        <div className="fixed inset-0 z-50 lg:hidden flex justify-end overflow-hidden">
           {/* Backdrop Overlay */}
           <div
             className="fixed inset-0 bg-black/80 backdrop-blur-sm transition-opacity"
@@ -182,10 +202,15 @@ export const Navbar: React.FC = () => {
           />
 
           {/* Drawer Content */}
-          <div className="fixed inset-y-0 right-0 w-full max-w-sm bg-[#120808] border-l border-white/10 shadow-2xl flex flex-col justify-between overflow-y-auto animate-in slide-in-from-right duration-300">
+          <div 
+            role="dialog"
+            aria-modal="true"
+            aria-label="Navigation Menu"
+            className="relative z-10 w-[88vw] max-w-[340px] sm:max-w-sm h-full h-[100dvh] max-h-[100dvh] bg-[#120808] border-l border-white/10 shadow-2xl flex flex-col justify-between overflow-y-auto overscroll-contain animate-in slide-in-from-right duration-300"
+          >
             
-            {/* Drawer Header */}
-            <div className="p-4 sm:p-5 border-b border-white/10 flex items-center justify-between bg-neutral-950/80">
+            {/* Drawer Header (Sticky at top, always visible & accessible) */}
+            <div className="sticky top-0 z-20 p-4 sm:p-5 border-b border-white/10 flex items-center justify-between bg-neutral-950/95 backdrop-blur-md shrink-0">
               <Logo showBranch={false} />
 
               <button
@@ -198,8 +223,8 @@ export const Navbar: React.FC = () => {
               </button>
             </div>
 
-            {/* Drawer Body - Navigation Links */}
-            <div className="px-4 py-5 space-y-1.5 flex-grow">
+            {/* Drawer Body - Navigation Links (Scrollable area) */}
+            <div className="px-4 py-5 space-y-1.5 flex-1 min-h-0">
               
               {/* Store Status Pill */}
               <div className="mb-4 flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-950/50 border border-emerald-500/30 text-emerald-300 text-xs font-semibold w-fit">
@@ -227,8 +252,8 @@ export const Navbar: React.FC = () => {
               })}
             </div>
 
-            {/* Drawer Footer - Contact CTAs */}
-            <div className="p-4 sm:p-5 border-t border-white/10 bg-neutral-950/90 space-y-3">
+            {/* Drawer Footer - Contact CTAs (Sticky at bottom, safe-area aware) */}
+            <div className="sticky bottom-0 z-20 p-4 sm:p-5 border-t border-white/10 bg-neutral-950/95 backdrop-blur-md space-y-2.5 sm:space-y-3 shrink-0 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
               {/* Call Button */}
               <a
                 href={RESTAURANT_INFO.telLink}

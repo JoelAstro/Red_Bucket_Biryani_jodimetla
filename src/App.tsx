@@ -25,7 +25,7 @@ export function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#151111] text-[#FFF0DA] flex flex-col selection:bg-brand-red selection:text-white">
+    <div className="min-h-screen w-full max-w-full overflow-x-clip bg-[#151111] text-[#FFF0DA] flex flex-col selection:bg-brand-red selection:text-white">
       {/* Sticky Top Navbar */}
       <Navbar />
 

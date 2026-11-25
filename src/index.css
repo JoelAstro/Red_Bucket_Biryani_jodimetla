@@ -22,15 +22,31 @@
   --gold: #FFD21C;
 }
 
+/* Smooth anchor scrolling & Viewport Containment */
+html {
+  scroll-behavior: smooth;
+  max-width: 100%;
+  overflow-x: clip;
+}
+
 body {
   background-color: #151111;
   color: #FFF0DA;
   font-family: var(--font-sans);
-  overflow-x: hidden;
+  max-width: 100%;
+  overflow-x: clip;
   margin: 0;
   padding: 0;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+@supports not (overflow-x: clip) {
+  html, body {
+    overflow-x: hidden;
+  }
 }
 
 /* Custom scrollbar */
@@ -90,7 +106,4 @@ body {
   animation: floatUp 3s ease-in-out infinite;
 }
 
-/* Smooth anchor scrolling */
-html {
-  scroll-behavior: smooth;
-}
+
